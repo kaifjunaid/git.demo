@@ -26,7 +26,7 @@ node {
             sudo npm install
             sudo npm run build
             sudo fuser -k 3000/tcp || true
-            npm run start
+            npm run start 
         """
     }
 }
