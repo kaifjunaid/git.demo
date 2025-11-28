@@ -5,7 +5,7 @@ def appDir = '/var/www/nextjs-app'
         deleteDir()  
     }
 
-    stage('Clone Repo'){
+    stage('Clone Repo'){ 
         echo 'Cloning the repo'  
         git(
             branch: 'main',
@@ -25,7 +25,7 @@ def appDir = '/var/www/nextjs-app'
             sudo npm install 
             sudo npm run build
             sudo fuser -k 3000/tcp || true
-            npm run start 
+            npm run start    
         """
     }
 }
