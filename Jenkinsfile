@@ -37,7 +37,7 @@ pipeline {
   post {
     always {
       echo 'Cleaning workspace (after build regardless of result)'
-      cleanWs(deleteDirs: true, disableDeferredWipeout: true, notFailBuild: true)
+      cleanWs(deleteDirs: true, disableDeferredWipeout: true, notFailBuild: true) 
     }
   }
-}
+} 
