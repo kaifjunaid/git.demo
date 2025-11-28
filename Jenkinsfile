@@ -1,15 +1,16 @@
 pipeline {
   agent any
-  options {
-    // Skip Jenkins' automatic SCM checkout — so we can clean workspace first
-    skipDefaultCheckout(true)
-  }
+
   stages {
-    stage('Prepare') {
+    stage('Clean Workspace') {
       steps {
-        echo 'Cleaning workspace before checkout…'
-        cleanWs()                // clean entire workspace
-        checkout scm             // then fetch the repo
+        echo 'Cleaning Jenkins Workspace'
+        deleteDir()
+      }
+    }
+    stage('Clone Repo') {
+      steps {
+        git branch: 'main', url: 'https://github.com/kaifjunaid/git.demo.git'
       }
     }
     stage('Build on Jenkins') {
@@ -23,21 +24,23 @@ pipeline {
     stage('Deploy to EC2') {
       steps {
         sh """
-          sudo mkdir -p ${appDir}
-          sudo chown -R jenkins:jenkins ${appDir}
-          rsync -av --delete --exclude='.git' ./ ${appDir}
-          cd ${appDir}
-          npm install --omit=dev
-          sudo fuser -k 3000/tcp || true
-          npm run start &
+          # ... your deploy script ...
         """
       }
     }
   }
+
   post {
     always {
-      echo 'Cleaning workspace after build…'
-      cleanWs(deleteDirs: true, disableDeferredWipeout: true)
+      // Wrap cleanup inside node block so workspace/FilePath context is available
+      node {
+        echo 'Cleaning workspace (post-build)...'
+        deleteDir()
+        // If you want to clean additional Jenkins-internal temp dirs:
+        dir("${env.WORKSPACE}@tmp") { deleteDir() }
+        dir("${env.WORKSPACE}@script") { deleteDir() }
+        dir("${env.WORKSPACE}@script@tmp") { deleteDir() }
+      }
     }
   }
 }
