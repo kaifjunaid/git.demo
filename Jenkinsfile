@@ -3,11 +3,11 @@ def appDir = '/var/www/nextjs-app'
 pipeline {
     agent any
 
-    stages {
+    stages { 
 
         stage('Clean Workspace') {
             steps {
-                echo 'Cleaning Jenkins Workspace'
+                echo 'Cleaning Jenkins Workspace' 
                 deleteDir()
             }
         }
