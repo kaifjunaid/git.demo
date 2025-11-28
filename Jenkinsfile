@@ -1,43 +1,31 @@
-pipeline {
-  agent any
+def appDir = '/var/www/nextjs-app'
 
-  stages {
-    stage('Clean Workspace') {
-      steps {
-        echo 'Cleaning Jenkins workspace (before build)'
-        cleanWs()
-      }
+    stage('Clean Workspace'){
+        echo 'Cleaning Jenkins Workspace' 
+        deleteDir()  
     }
 
-    stage('Clone Repo') {
-      steps {
-        git branch: 'main',
+    stage('Clone Repo'){
+        echo 'Cloning the repo'  
+        git(
+            branch: 'main',
             url: 'https://github.com/kaifjunaid/git.demo.git'
-      }
+        )
     }
 
-    stage('Build on Jenkins') {
-      steps {
-        sh '''
-          npm install
-          npm run build
-        '''
-      }
-    }
-
-    stage('Deploy to EC2') {
-      steps {
+    stage('Deploy to EC2'){
+        echo 'Deploying to EC2' 
         sh """
-          # ... your deploy script ...
-        """
-      }
-    }
-  }
+            sudo mkdir -p ${appDir}
+            sudo chown -R jenkins:jenkins ${appDir} 
 
-  post {
-    always {
-      echo 'Cleaning workspace (after build regardless of result)'
-      cleanWs(deleteDirs: true, disableDeferredWipeout: true, notFailBuild: true) 
-    }
-  }
-} 
+            rsync -av --delete --exclude='.git' --exclude='node_modules' ./ ${appDir}
+
+            cd ${appDir}
+            sudo npm install 
+            sudo npm run build
+            sudo fuser -k 3000/tcp || true
+            npm run start 
+        """
+    }
+}
