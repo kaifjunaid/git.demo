@@ -4,15 +4,18 @@ pipeline {
   stages {
     stage('Clean Workspace') {
       steps {
-        echo 'Cleaning Jenkins Workspace'
-        deleteDir()
+        echo 'Cleaning Jenkins workspace (before build)'
+        cleanWs()
       }
     }
+
     stage('Clone Repo') {
       steps {
-        git branch: 'main', url: 'https://github.com/kaifjunaid/git.demo.git'
+        git branch: 'main',
+            url: 'https://github.com/kaifjunaid/git.demo.git'
       }
     }
+
     stage('Build on Jenkins') {
       steps {
         sh '''
@@ -21,6 +24,7 @@ pipeline {
         '''
       }
     }
+
     stage('Deploy to EC2') {
       steps {
         sh """
@@ -32,15 +36,8 @@ pipeline {
 
   post {
     always {
-      // Wrap cleanup inside node block so workspace/FilePath context is available
-      node {
-        echo 'Cleaning workspace (post-build)...'
-        deleteDir()
-        // If you want to clean additional Jenkins-internal temp dirs:
-        dir("${env.WORKSPACE}@tmp") { deleteDir() }
-        dir("${env.WORKSPACE}@script") { deleteDir() }
-        dir("${env.WORKSPACE}@script@tmp") { deleteDir() }
-      }
+      echo 'Cleaning workspace (after build regardless of result)'
+      cleanWs(deleteDirs: true, disableDeferredWipeout: true, notFailBuild: true)
     }
   }
 }
