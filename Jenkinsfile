@@ -1,16 +1,15 @@
 pipeline {
   agent any
-
+  options {
+    // Skip Jenkins' automatic SCM checkout — so we can clean workspace first
+    skipDefaultCheckout(true)
+  }
   stages {
-    stage('Clean Workspace') {
+    stage('Prepare') {
       steps {
-        echo 'Cleaning Jenkins Workspace'
-        deleteDir()
-      }
-    }
-    stage('Clone Repo') {
-      steps {
-        git branch: 'main', url: 'https://github.com/kaifjunaid/git.demo.git'
+        echo 'Cleaning workspace before checkout…'
+        cleanWs()                // clean entire workspace
+        checkout scm             // then fetch the repo
       }
     }
     stage('Build on Jenkins') {
@@ -24,19 +23,21 @@ pipeline {
     stage('Deploy to EC2') {
       steps {
         sh """
-          # ... your deploy script ...
+          sudo mkdir -p ${appDir}
+          sudo chown -R jenkins:jenkins ${appDir}
+          rsync -av --delete --exclude='.git' ./ ${appDir}
+          cd ${appDir}
+          npm install --omit=dev
+          sudo fuser -k 3000/tcp || true
+          npm run start &
         """
       }
     }
   }
-
   post {
     always {
-      // full cleanup after build
-      deleteDir()
-      dir("${env.WORKSPACE}@tmp") { deleteDir() }
-      dir("${env.WORKSPACE}@script") { deleteDir() }
-      dir("${env.WORKSPACE}@script@tmp") { deleteDir() }
+      echo 'Cleaning workspace after build…'
+      cleanWs(deleteDirs: true, disableDeferredWipeout: true)
     }
   }
 }
