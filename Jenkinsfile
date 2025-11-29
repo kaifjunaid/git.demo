@@ -35,18 +35,12 @@ pipeline {
                     sudo mkdir -p ${appDir}
                     sudo chown -R jenkins:jenkins ${appDir}
 
-                    # Copy built artifacts to EC2 path
                     rsync -av --delete --exclude='.git' ./ ${appDir}
 
                     cd ${appDir}
-
-                    # Install only production dependencies
                     npm install --omit=dev
 
-                    # Kill running app on port 3000 if any
-                    sudo fuser -k 3000/tcp || true
-
-                    # Start Next.js app
+                    sudo fuser -k 3000/tcp || true   
                     npm run start &
                 """
             }
