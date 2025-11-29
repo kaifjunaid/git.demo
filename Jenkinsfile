@@ -33,11 +33,11 @@ pipeline {
                 echo 'Deploying to EC2'
                 sh """
                     sudo mkdir -p ${appDir}
-                    sudo chown -R jenkins:jenkins ${appDir}
+                    sudo chown -R jenkins:jenkins ${appDir} 
 
-                    rsync -av --delete --exclude='.git' ./ ${appDir}
+                    rsync -av --delete --exclude='.git' ./ ${appDir} 
 
-                    cd ${appDir}
+                    cd ${appDir} 
                     npm install --omit=dev
 
                     sudo fuser -k 3000/tcp || true   
