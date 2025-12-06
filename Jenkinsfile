@@ -1,15 +1,20 @@
 pipeline {
     agent any
 
-    triggers {
-        githubPush()
-    }
-
     environment {
-        APP_DIR = '/var/www/nextjs-app'
+        APP_DIR = "/var/www/nextjs-app"
+        NODE_VERSION = "20.19.6"
+        NVM_DIR = "$HOME/.nvm"
     }
 
     stages {
+        stage('Checkout') {
+            steps {
+                echo 'Checking out the repository...'
+                checkout scm
+            }
+        }
+
         stage('Clean Workspace') {
             steps {
                 echo 'Cleaning Jenkins workspace...'
@@ -17,43 +22,40 @@ pipeline {
             }
         }
 
-        stage('Clone Repository') {
-            steps {
-                echo 'Cloning latest repository...'
-                git(
-                    url: 'https://github.com/kaifjunaid/git.demo.git',
-                    branch: 'main'
-                )
-            }
-        }
-
         stage('Deploy to EC2') {
             steps {
                 echo 'Deploying latest version to EC2...'
                 sh """
-                    # Prepare deployment directory
-                    sudo mkdir -p ${APP_DIR}
-                    sudo chown -R jenkins:jenkins ${APP_DIR}
+                    # Prepare app directory
+                    mkdir -p ${APP_DIR}
+                    chown -R jenkins:jenkins ${APP_DIR}
 
-                    # Remove old node_modules and package-lock
-                    rm -rf ${APP_DIR}/node_modules
+                    # Clean old build files
+                    rm -rf ${APP_DIR}/node_modules ${APP_DIR}/.next
                     rm -f ${APP_DIR}/package-lock.json
 
-                    # Sync new files
+                    # Copy latest files
                     rsync -av --delete --exclude='.git' --exclude='node_modules' ./ ${APP_DIR}/
 
-                    # Install & build as Jenkins user
+                    # Go to app directory
                     cd ${APP_DIR}
+
+                    # Load Node environment (if using nvm)
+                    export NVM_DIR="${NVM_DIR}"
+                    [ -s "\$NVM_DIR/nvm.sh" ] && \. "\$NVM_DIR/nvm.sh"
+                    nvm use ${NODE_VERSION}
+
+                    # Install dependencies
                     npm install --no-audit --no-fund
+
+                    # Build Next.js app
                     npm run build
-
-                    # Stop old process
-                    sudo fuser -k 3000/tcp || true
-
-                    # Start app
-                    npm run start &
                 """
             }
         }
+    }
+
+    options {
+        timeout(time: 30, unit: 'MINUTES')
     }
 }
