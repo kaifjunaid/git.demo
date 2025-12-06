@@ -7,7 +7,7 @@ pipeline {
     }
 
     environment {
-        APP_DIR = '/var/www/nextjs-app'
+        APP_DIR = '/var/www/nextjs-app'  
     }
 
     stages {
