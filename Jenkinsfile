@@ -50,7 +50,7 @@ pipeline {
                     # Kill any existing process on port 3000
                     sudo fuser -k 3000/tcp || true
 
-                    # Start application
+                   
                     npm run start
                 """
             }
