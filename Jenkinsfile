@@ -1,39 +1,41 @@
 node {
     def appDir = '/var/www/nextjs-app'
 
-    stage('clean workspace'){
-        echo 'cleaning Jenkins Workspace'
+    stage('Clean Workspace') {
+        echo 'Cleaning Jenkins workspace'
         deleteDir()
     }
 
-    stage('Clone Repo'){
+    stage('Clone Repo') {
         echo 'Cloning the repo'
         git(
             branch: 'main',
-            git url: 'https://github.com/kaifjunaid/git.demo.git',
+            url: 'https://github.com/kaifjunaid/git.demo.git'
         )
     }
 
-    stage('depoly to EC2'){
+    stage('Deploy to EC2') {
         echo 'Deploying to EC2'
         sh """
             sudo mkdir -p ${appDir}
-            sudo chown -R 
-            jenkins:jenkins ${appDir}
+            sudo chown -R jenkins:jenkins ${appDir}
 
-            rsync -av --delete 
-            --exclude='.git'
-            --exclude='node_modules' .
-            / ${appDir}
+            
+            rsync -av --delete \
+                --exclude='.git' \
+                --exclude='node_modules' \
+                ./ ${appDir}/
 
             cd ${appDir}
-            sudo npm install
-            sudo npm run build 
-            sudo fuser -k 3000/tcp ||
-            true
-            npm run start 
-        """    
 
-        
+            sudo npm install
+            sudo npm run build
+
+            
+            sudo fuser -k 3000/tcp || true
+
+           
+            npm run start
+        """
     }
-}    
+}
