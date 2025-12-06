@@ -10,7 +10,6 @@ pipeline {
     }
 
     stages {
-
         stage('Clean Workspace') {
             steps {
                 echo 'Cleaning Jenkins workspace...'
@@ -20,36 +19,39 @@ pipeline {
 
         stage('Clone Repository') {
             steps {
-                echo 'Cloning the repository...'
+                echo 'Cloning latest repository...'
                 git(
-                    branch: 'main',
-                    url: 'https://github.com/kaifjunaid/git.demo.git'
+                    url: 'https://github.com/kaifjunaid/git.demo.git',
+                    branch: 'main'
                 )
             }
         }
 
         stage('Deploy to EC2') {
             steps {
-                echo 'Deploying application to EC2...'
+                echo 'Deploying latest version to EC2...'
                 sh """
+                    # Prepare deployment directory
                     sudo mkdir -p ${APP_DIR}
                     sudo chown -R jenkins:jenkins ${APP_DIR}
 
-                    rsync -av --delete \
-                        --exclude='.git' \
-                        --exclude='node_modules' \
-                        ./ ${APP_DIR}/
+                    # Remove old node_modules and package-lock
+                    rm -rf ${APP_DIR}/node_modules
+                    rm -f ${APP_DIR}/package-lock.json
 
+                    # Sync new files
+                    rsync -av --delete --exclude='.git' --exclude='node_modules' ./ ${APP_DIR}/
+
+                    # Install & build as Jenkins user
                     cd ${APP_DIR}
+                    npm install --no-audit --no-fund
+                    npm run build
 
-                    # FIX: avoid Jenkins timeout issues
-                    npm install --no-audit --no-fund --silent
-
-                    sudo npm run build
-
+                    # Stop old process
                     sudo fuser -k 3000/tcp || true
 
-                    npm run start  
+                    # Start app
+                    npm run start &
                 """
             }
         }
