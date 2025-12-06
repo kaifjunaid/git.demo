@@ -43,11 +43,13 @@ pipeline {
                     cd ${APP_DIR}
 
                     # FIX: avoid Jenkins timeout issues
-                    npm install --no-audit --no-fund --silent
+                    
 
-                    sudo npm run build
-
-                    sudo fuser -k 3000/tcp || true
+                    sudo fuser -k 3000sudo chown -R jenkins:jenkins /var/www/nextjs-app
+                    cd /var/www/nextjs-app
+                    npm install --no-audit --no-fund
+                    npm run build
+                    /tcp || true
 
                     npm run start  
                 """
