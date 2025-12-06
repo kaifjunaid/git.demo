@@ -19,7 +19,7 @@ export default function Home() {
               app/me.tsx
             </code>
             .
-          </li>
+          </li>     
           <li className="tracking-[-.01em]">
             Save and see your changes instantly.
           </li>
