@@ -1,13 +1,12 @@
 pipeline {
     agent any
 
-    // Auto-run pipeline on every Git push
     triggers {
         githubPush()
     }
 
     environment {
-        APP_DIR = '/var/www/nextjs-app'  
+        APP_DIR = '/var/www/nextjs-app'
     }
 
     stages {
@@ -36,7 +35,6 @@ pipeline {
                     sudo mkdir -p ${APP_DIR}
                     sudo chown -R jenkins:jenkins ${APP_DIR}
 
-                    # Sync project files
                     rsync -av --delete \
                         --exclude='.git' \
                         --exclude='node_modules' \
@@ -44,13 +42,13 @@ pipeline {
 
                     cd ${APP_DIR}
 
-                    sudo npm install
+                    # FIX: avoid Jenkins timeout issues
+                    npm install --no-audit --no-fund --silent
+
                     sudo npm run build
 
-                    # Kill any existing process on port 3000
                     sudo fuser -k 3000/tcp || true
 
-                   
                     npm run start
                 """
             }
