@@ -31,35 +31,32 @@ pipeline {
         stage('Deploy to EC2') {
             steps {
                 echo 'Deploying application to EC2...'
-                sh """
-                    # Create and set ownership on app directory
-                    sudo mkdir -p ${APP_DIR}
-                    sudo chown -R jenkins:jenkins ${APP_DIR}
 
-                    # Sync project files
-                    rsync -av --delete \
-                        --exclude='.git' \
-                        --exclude='node_modules' \
-                        ./ ${APP_DIR}/
+                // Ensure app directory exists
+                sh "sudo mkdir -p ${APP_DIR}"
+                sh "sudo chown -R jenkins:jenkins ${APP_DIR}"
 
-                    # Move into app directory
-                    cd ${APP_DIR}
+                // Sync project files
+                sh "rsync -av --delete --exclude='.git' --exclude='node_modules' ./ ${APP_DIR}/"
 
-                    # Kill any app already running on port 3000
-                    sudo fuser -k 3000/tcp || true
+                // Move into app directory
+                dir("${APP_DIR}") {
 
-                    # Install dependencies without heavy logs
-                    npm install --no-audit --no-fund --silent
+                    // Kill existing app on port 3000
+                    sh "sudo fuser -k 3000/tcp || true"
 
-                    # Build Next.js app
-                    npm run build
+                    // Install dependencies safely
+                    sh "npm install --no-audit --no-fund --silent"
 
-                    # Stop previous running app
-                    pkill -f 'npm run start' || true
+                    // Build Next.js app
+                    sh "npm run build"
 
-                    # Start app in background safely
-                    nohup npm run start > app.log 2>&1 &
-                """ 
+                    // Stop any previously running app
+                    sh "pkill -f 'npm run start' || true"
+
+                    // Start app in background safely
+                    sh "nohup npm run start > app.log 2>&1 &"
+                }
             }
         }
     }
