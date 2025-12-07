@@ -46,16 +46,21 @@ pipeline {
                     cd ${APP_DIR}
 
                     # Kill any app already running on port 3000
-                    sudo fuser -k 3000 || true
+                    sudo fuser -k 3000/tcp || true
 
-                    # Install and build Next.js app
-                    npm install --no-audit --no-fund
+                    # Install dependencies without heavy logs
+                    npm install --no-audit --no-fund --silent
+
+                    # Build Next.js app
                     npm run build
 
-                    # Start app in background
-                    npm run start &
-                """
+                    # Stop previous running app
+                    pkill -f 'npm run start' || true
+
+                    # Start app in background safely
+                    nohup npm run start > app.log 2>&1 &
+                """ 
             }
         }
     }
-} 
+}
