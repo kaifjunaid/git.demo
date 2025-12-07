@@ -6,8 +6,9 @@ pipeline {
     }
 
     environment {
-        APP_DIR = '/var/www/nextjs-app'
+    APP_DIR = '/var/lib/jenkins/workspace/nextjs-app-deploy'
     }
+
 
     stages {
 
