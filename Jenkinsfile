@@ -32,30 +32,30 @@ pipeline {
             steps {
                 echo 'Deploying application to EC2...'
                 sh """
+                    # Create and set ownership on app directory
                     sudo mkdir -p ${APP_DIR}
                     sudo chown -R jenkins:jenkins ${APP_DIR}
 
+                    # Sync project files
                     rsync -av --delete \
                         --exclude='.git' \
                         --exclude='node_modules' \
                         ./ ${APP_DIR}/
 
+                    # Move into app directory
                     cd ${APP_DIR}
 
-                    # FIX: avoid Jenkins timeout issues
-                    
+                    # Kill any app already running on port 3000
+                    sudo fuser -k 3000 || true
 
-                    sudo fuser -k 3000sudo chown -R jenkins:jenkins /var/www/nextjs-app
-                    cd /var/www/nextjs-app
+                    # Install and build Next.js app
                     npm install --no-audit --no-fund
                     npm run build
-                    /tcp || true
 
-                    npm run start  
+                    # Start app in background
+                    npm run start &
                 """
             }
         }
     }
-}
-
-
+} 
