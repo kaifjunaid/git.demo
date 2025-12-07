@@ -53,7 +53,7 @@ pipeline {
                     sh "npm run build"
 
                     // Stop any previously running app
-                    sh "pkill -f 'npm run start' || true"
+                    sh "pkill -f 'npm run start' || true"  
 
                     // Start app in background safely
                     sh "nohup npm run start > app.log 2>&1 &"
