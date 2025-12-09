@@ -11,13 +11,6 @@ pipeline {
 
     stages {
 
-        stage('Clean Workspace') {
-            steps {
-                echo 'Cleaning Jenkins workspace...'
-                deleteDir()
-            }
-        }
-
         stage('Clone Repository') {
             steps {
                 echo 'Cloning latest repository...'
@@ -27,35 +20,41 @@ pipeline {
 
         stage('Deploy to EC2') {
             steps {
-                echo 'Deploying latest version to EC2...'
-                sh """
+                sh '''
+                    set -e  # exit on error
+                    set -o pipefail
+
+                    echo "===== DEBUG: Node & NPM version on EC2 ====="
+                    node -v || echo "ERROR: Node not installed"
+                    npm -v || echo "ERROR: NPM not installed"
+
                     echo "Preparing deployment directory..."
                     sudo mkdir -p ${APP_DIR}
                     sudo chown -R jenkins:jenkins ${APP_DIR}
 
-                    echo "Removing old node_modules & lock file..."
-                    rm -rf ${APP_DIR}/node_modules
-                    rm -f ${APP_DIR}/package-lock.json
+                    echo "Syncing latest repository..."
+                    rsync -av --delete --exclude ".git" --exclude "node_modules" ./ ${APP_DIR}/
 
-                    echo "Syncing latest files..."
-                    rsync -av --delete \
-                        --exclude='.git' \
-                        --exclude='node_modules' \
-                        ./ ${APP_DIR}/
-
-                    echo "Installing dependencies (verbose)..."
                     cd ${APP_DIR}
-                    npm install --verbose --no-audit --no-fund
 
-                    echo "Building application..."
-                    npm run build
+                    echo "===== DEBUG: Starting npm install ====="
+                    npm install --verbose --no-audit --no-fund 2>&1 | tee npm-debug.log
 
-                    echo "Killing old app..."
-                    sudo fuser -k 3000/tcp || true
+                    echo "===== DEBUG: Running Next.js build ====="
+                    npm run build 2>&1 | tee build-debug.log
 
-                    echo "Starting application..."
-                    nohup npm start > app.log 2>&1 &
-                """
+                    echo "Installing PM2 globally (if missing)..."
+                    sudo npm install -g pm2 || true
+
+                    echo "Stopping previous app..."
+                    pm2 delete nextjs-app || true
+
+                    echo "Starting new app with PM2..."
+                    pm2 start "npm start" --name nextjs-app
+
+                    echo "Saving PM2 config..."
+                    pm2 save
+                '''
             }
         }
     }
