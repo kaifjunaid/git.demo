@@ -20,7 +20,7 @@ pipeline {
 
         stage('Deploy to EC2') {
             steps {
-                sh(script: '''
+                sh '''
                     #!/bin/bash
                     set -e
 
@@ -52,8 +52,7 @@ pipeline {
                     echo "Starting new app with PM2..."
                     pm2 start "npm start" --name nextjs-app
                     pm2 save
-
-                ''', shell: '/bin/bash')
+                '''
             }
         }
     }
