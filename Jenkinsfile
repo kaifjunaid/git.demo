@@ -1,97 +1,56 @@
-pipeline {
-    agent any
+node {
 
-    triggers {
-        githubPush()
+    def appDir = '/var/www/nextjs-app'
+
+    stage('Clean Workspace') {
+        echo 'Cleaning Jenkins Workspace...'
+        deleteDir()
     }
 
-    options {
-        // Better logs + safety
-        ansiColor('xterm')
-        timeout(time: 40, unit: 'MINUTES')
-        skipDefaultCheckout(true)
+    stage('Clone Repo') {
+        echo 'Cloning the repository...'
+        git(
+            branch: 'main',
+            url: 'https://github.com/kaifjunaid/git.demo.git'
+        )
     }
 
-    environment {
-        APP_DIR  = '/var/www/nextjs-app'
-        NODE_ENV = 'production'
-    }
+    stage('Deploy to EC2') {
+        echo 'Deploying to EC2...'
 
-    stages {
+        sh """
+            set -e
 
-        stage('Checkout') {
-            steps {
-                echo 'Checking out latest code...'
-                deleteDir() // clean workspace
-                git branch: 'main', url: 'https://github.com/kaifjunaid/git.demo.git'
-            }
+            echo "===== Preparing Deployment Directory ====="
+            sudo mkdir -p ${appDir}
+            sudo chown -R jenkins:jenkins ${appDir}
+
+            echo "===== Syncing Code ====="
+            rsync -av --delete \
+                --exclude='.git' \
+                --exclude='node_modules' \
+                ./ ${appDir}/
+
+            cd ${appDir}
+
+            echo "===== Installing Dependencies ====="
+        """
+
+        // Retry npm install for reliability
+        retry(3) {
+            sh "cd ${appDir} && npm install --no-audit --no-fund"
         }
 
-        stage('Install dependencies & Build') {
-            steps {
-                sh '''
-                    #!/bin/bash
-                    set -euxo pipefail
+        sh """
+            echo "===== Building App ====="
+            cd ${appDir}
+            npm run build
 
-                    echo "===== DEBUG: Node & NPM version ====="
-                    node -v
-                    npm -v
+            echo "===== Restarting App on Port 3000 ====="
+            fuser -k 3000/tcp || true
 
-                    echo "===== Installing dependencies (npm ci) ====="
-                    # Faster and more reliable for CI than npm install
-                    npm ci --no-audit --no-fund
-
-                    echo "===== Building Next.js app ====="
-                    npm run build
-                '''
-            }
-        }
-
-        stage('Deploy to EC2') {
-            steps {
-                sh '''
-                    #!/bin/bash
-                    set -euxo pipefail
-
-                    echo "Preparing deployment directory..."
-                    sudo mkdir -p "$APP_DIR"
-                    sudo chown -R jenkins:jenkins "$APP_DIR"
-
-                    echo "Syncing latest build to $APP_DIR ..."
-                    rsync -av --delete \
-                        --exclude ".git" \
-                        --exclude "node_modules" \
-                        ./ "$APP_DIR/"
-
-                    cd "$APP_DIR"
-
-                    echo "Checking PM2..."
-                    if ! command -v pm2 >/dev/null 2>&1; then
-                      echo "PM2 not found, installing globally..."
-                      sudo npm install -g pm2
-                    fi
-
-                    echo "Restarting app with PM2..."
-                    pm2 delete nextjs-app || true
-                    pm2 start "npm start" --name nextjs-app
-                    pm2 save || true
-
-                    echo "Deployment finished successfully."
-                '''
-            }
-        }
-    }
-
-    post {
-        failure {
-            echo "Pipeline failed – check npm-debug logs or Jenkins logs for details."
-        }
-        always {
-            // Helpful if npm fails
-            sh '''
-              echo "Listing debug logs if present..."
-              ls -l npm-debug.log build-debug.log 2>/dev/null || true
-            '''
-        }
+           
+            nohup npm run start > app.log 2>&1 &
+        """
     }
 }
