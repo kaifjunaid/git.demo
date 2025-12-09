@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     triggers {
-        githubPush()
+        githubPush()    
     }
 
     environment {
@@ -51,7 +51,7 @@ pipeline {
 
                     echo "Starting new app with PM2..."
                     pm2 start "npm start" --name nextjs-app
-                    pm2 save
+                    pm2 save  
                 '''
             }
         }
