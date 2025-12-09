@@ -2,58 +2,76 @@ pipeline {
     agent any
 
     triggers {
-        githubPush()    
+        githubPush()
     }
 
     environment {
         APP_DIR = '/var/www/nextjs-app'
     }
 
+    options {
+        timestamps()
+    }
+
     stages {
 
-        stage('Clone Repository') {
+        stage('Checkout Source') {
             steps {
-                echo 'Cloning latest repository...'
-                git(url: 'https://github.com/kaifjunaid/git.demo.git', branch: 'main')
+                echo 'Checking out repository...'
+                checkout scm
             }
         }
 
         stage('Deploy to EC2') {
             steps {
-                sh '''
-                    #!/bin/bash
-                    set -e
+                timeout(time: 30, unit: 'MINUTES') {
+                    sh '''
+                        #!/bin/bash
+                        set -e
 
-                    echo "===== DEBUG: Node & NPM version ====="
-                    node -v || echo "ERROR: Node not installed"
-                    npm -v || echo "ERROR: NPM not installed"
+                        echo "===== Node & NPM Version ====="
+                        node -v
+                        npm -v
 
-                    echo "Preparing deployment directory..."
-                    sudo mkdir -p ${APP_DIR}
-                    sudo chown -R jenkins:jenkins ${APP_DIR}
+                        echo "===== Preparing Deployment Directory ====="
+                        sudo mkdir -p ${APP_DIR}
+                        sudo chown -R jenkins:jenkins ${APP_DIR}
 
-                    echo "Syncing latest repository..."
-                    rsync -av --delete --exclude ".git" --exclude "node_modules" ./ ${APP_DIR}/
+                        echo "===== Syncing Code ====="
+                        rsync -av --delete \
+                          --exclude ".git" \
+                          --exclude "node_modules" \
+                          ./ ${APP_DIR}/
 
-                    cd ${APP_DIR}
+                        cd ${APP_DIR}
 
-                    echo "===== DEBUG: Running npm install ====="
-                    npm install --verbose --no-audit --no-fund 2>&1 | tee npm-debug.log
+                        echo "===== Installing Dependencies (npm ci) ====="
+                        npm ci --no-audit --no-fund
 
-                    echo "===== DEBUG: Running Next.js build ====="
-                    npm run build 2>&1 | tee build-debug.log
+                        echo "===== Building Next.js App ====="
+                        npm run build
 
-                    echo "Installing PM2 globally..."
-                    sudo npm install -g pm2 || true
+                        echo "===== Ensuring PM2 Installed ====="
+                        if ! command -v pm2 >/dev/null 2>&1; then
+                          sudo npm install -g pm2
+                        fi
 
-                    echo "Stopping previous app..."
-                    pm2 delete nextjs-app || true
-
-                    echo "Starting new app with PM2..."
-                    pm2 start "npm start" --name nextjs-app
-                    pm2 save  
-                '''
+                        echo "===== Restarting App ====="
+                        pm2 delete nextjs-app || true
+                        pm2 start npm --name "nextjs-app" -- start
+                        pm2 save
+                    '''
+                }
             }
+        } 
+    }
+
+    post {
+        success {
+            echo ' Deployment completed successfully'
+        }
+        failure {
+            echo ' Deployment failed – check logs above'
         }
     }
 }
