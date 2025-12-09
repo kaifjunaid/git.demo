@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     triggers {
-        // Trigger build automatically on every GitHub push
         githubPush()
     }
 
@@ -22,10 +21,7 @@ pipeline {
         stage('Clone Repository') {
             steps {
                 echo 'Cloning latest repository...'
-                git(
-                    url: 'https://github.com/kaifjunaid/git.demo.git',
-                    branch: 'main'
-                )
+                git(url: 'https://github.com/kaifjunaid/git.demo.git', branch: 'main')
             }
         }
 
@@ -47,14 +43,14 @@ pipeline {
                         --exclude='node_modules' \
                         ./ ${APP_DIR}/
 
-                    echo "Installing dependencies..."
+                    echo "Installing dependencies (verbose)..."
                     cd ${APP_DIR}
-                    npm install --no-audit --no-fund
+                    npm install --verbose --no-audit --no-fund
 
                     echo "Building application..."
                     npm run build
 
-                    echo "Stopping existing app on port 3000..."
+                    echo "Killing old app..."
                     sudo fuser -k 3000/tcp || true
 
                     echo "Starting application..."
