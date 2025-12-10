@@ -24,9 +24,9 @@ node {
 
             cd ${appDir}
 
-            rm -rf node_modules package-lock.json
+           rm -rf node_modules
+           npm ci --no-audit --no-fund
 
-            npm ci --no-audit --no-fund
             npm run build
 
             sudo fuser -k 3000/tcp || true
@@ -34,4 +34,4 @@ node {
             nohup npm run start > app.log 2>&1 &
         """
     }
-}
+} 
