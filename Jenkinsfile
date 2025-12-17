@@ -1,5 +1,5 @@
 node {
-    def appDir = '/var/www/nextjs-app'
+    def appDir = '/var/www/nextjs-app' 
 
     stage('Clean Workspace') {
         echo 'Cleaning Jenkins Workspace...'
@@ -34,4 +34,4 @@ node {
             nohup npm run start > app.log 2>&1 &
         """
     }
-}  
+}   
