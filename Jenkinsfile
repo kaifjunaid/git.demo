@@ -13,6 +13,9 @@ node {
             url: 'https://github.com/kaifjunaid/git.demo.git'
         )
     }
+  options {
+  durabilityHint('MAX_SURVIVABILITY')
+}
 
     stage('Deploy to EC2') {
         echo 'Deploying to EC2...'
