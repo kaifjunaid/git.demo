@@ -50,11 +50,12 @@ pipeline {
 
                     pm2 start npm \
                       --name nextjs-app \
-                      -- start -- -H 0.0.0.0 -p $PORT
+                      -- start -- -H 0.0.0.0 -p $PORT 
 
                     pm2 save
                 '''
             }
         }
     }
+
 }
