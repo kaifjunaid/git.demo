@@ -7,6 +7,14 @@ pipeline {
         disableConcurrentBuilds()
     }
 
+    parameters {
+        choice(
+            name: 'BRANCH',
+            choices: ['main', 'testing'],
+            description: 'Git branch to deploy from'
+        )
+    }
+
     environment {
         APP_DIR = '/var/www/nextjs-app'
         PORT = '3000'
@@ -21,17 +29,9 @@ pipeline {
 
         stage('Clone Repo') {
             steps {
-                git branch: 'main',
-                 
-                url: 'https://github.com/kaifjunaid/git.demo.git' 
-
-                
-        string(
-            name: 'BRANCH',
-            choose: 'main' 'testing',
-            description: 'Git branch to deploy from (e.g., main, develop, feature/xyz)'
+                git branch: params.BRANCH,
+                    url: 'https://github.com/kaifjunaid/git.demo.git'
             }
-            
         }
 
         stage('Install & Build') {
@@ -65,5 +65,4 @@ pipeline {
             }
         }
     }
-
 }
