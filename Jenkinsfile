@@ -10,7 +10,7 @@ pipeline {
     parameters {
         choice(
             name: 'BRANCH',
-            choices: ['main', 'testing'],
+            choices: ['main', 'testing', 'staging'],
             description: 'Git branch to deploy from'
         )
     }
