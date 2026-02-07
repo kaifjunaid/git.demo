@@ -22,8 +22,16 @@ pipeline {
         stage('Clone Repo') {
             steps {
                 git branch: 'main',
-                    url: 'https://github.com/kaifjunaid/git.demo.git'
+                 
+                url: 'https://github.com/kaifjunaid/git.demo.git' 
+
+                )
+        string(
+            name: 'BRANCH',
+            choose: 'main' 'testing',
+            description: 'Git branch to deploy from (e.g., main, develop, feature/xyz)'
             }
+            
         }
 
         stage('Install & Build') {
