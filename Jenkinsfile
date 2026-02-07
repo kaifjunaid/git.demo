@@ -25,7 +25,7 @@ pipeline {
                  
                 url: 'https://github.com/kaifjunaid/git.demo.git' 
 
-                )
+                
         string(
             name: 'BRANCH',
             choose: 'main' 'testing',
