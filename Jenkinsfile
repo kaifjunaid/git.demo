@@ -33,8 +33,9 @@ parameters {
 
         stage('Clone Repo') {
             steps {
-                git branch: params.BRANCH,
+                git branch: params.BRANCH_TO_DEPLOY,
                     url: 'https://github.com/kaifjunaid/git.demo.git'
+                    branch: "${params.BRANCH_TO_DEPLOY}"
             }
         }
 
