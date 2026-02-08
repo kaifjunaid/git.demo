@@ -6,14 +6,18 @@ pipeline {
         timestamps()
         disableConcurrentBuilds()
     }
+parameters {
+    gitParameter(
+        name: 'BRANCH_TO_DEPLOY', 
+        type: 'PT_BRANCH',
+        branchFilter: '.*', // This captures main, testing, and staging
+        defaultValue: 'main',
+        sortMode: 'ASCENDING_SMART', 
+        description: 'Git branch to deploy from'
+    )
+}
 
-    parameters {
-        choice(
-            name: 'BRANCH',
-            choices: ['main', 'testing', 'staging'],
-            description: 'Git branch to deploy from'
-        )
-    }
+
 
     environment {
         APP_DIR = '/var/www/nextjs-app'
