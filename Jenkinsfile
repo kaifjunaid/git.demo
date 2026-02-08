@@ -31,14 +31,17 @@ parameters {
             }
         }
 
-       stage('Clone Repo') {
-         steps {
-             echo "Deploying branch: ${params.BRANCH_TO_DEPLOY}"
+      stage('Clone Repo') {
+    steps {
+        script {
+            def branch = params.BRANCH_TO_DEPLOY.replaceFirst(/^origin\//, '')
+            echo "Deploying branch: ${branch}"
 
-             git(
+            git(
                 url: 'https://github.com/kaifjunaid/git.demo.git',
-                branch: "${params.BRANCH_TO_DEPLOY}"
-        )
+                branch: branch
+            )
+        }
     }
 }
 
