@@ -31,13 +31,17 @@ parameters {
             }
         }
 
-        stage('Clone Repo') {
-            steps {
-                git branch: params.BRANCH_TO_DEPLOY,
-                    url: 'https://github.com/kaifjunaid/git.demo.git'
-                    branch: "${params.BRANCH_TO_DEPLOY}"
-            }
-        }
+       stage('Clone Repo') {
+         steps {
+             echo "Deploying branch: ${params.BRANCH_TO_DEPLOY}"
+
+             git(
+                url: 'https://github.com/kaifjunaid/git.demo.git',
+                branch: "${params.BRANCH_TO_DEPLOY}"
+        )
+    }
+}
+
 
         stage('Install & Build') {
             steps {
